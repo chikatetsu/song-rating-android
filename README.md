@@ -48,9 +48,10 @@ Otherwise, the app will simply be unable to listen to your music streaming servi
 notifications, or will be unable to send you notifications so you can vote for your
 favorite song. If you are concerned by the permissions given to the `Song Rating`
 application (which is something you SHOULD be concerned to), I redirect you to the
-`AppleMusicNotificationListener.kt` file, where the filtering on your notifications
-are done, so that you can see by yourself that `Song Rating` is only listening to
-your music streaming application and nothing else.
+[`AppleMusicNotificationListener.kt`](https://github.com/chikatetsu/song-rating-android/blob/main/app/src/main/java/com/example/songrating/AppleMusicNotificationListener.kt)
+file, where the filtering on your notifications are done, so that you can see by
+yourself that `Song Rating` is only listening to your music streaming application
+and nothing else.
 
 ### 4. Test the app
 If everything works fine, a notification from `Song Rating` should appear while you
