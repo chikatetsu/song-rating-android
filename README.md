@@ -1,6 +1,6 @@
 # Song Rating Android App
 
-This is the Android client of the Song Rating environment. It communicate with
+This is the Android client of the Song Rating environment. It communicates with
 your [Song Rating API](https://github.com/chikatetsu/song-rating-server) running on
 your server to rate your songs. While you listen to your music on Apple Music (and 
 on any music streaming services in the future), Song Rating will show a notification
@@ -17,21 +17,17 @@ so you can say if the current song playing is better or worse than the previous 
 - Run the app
 
 ### 2. Create the .env file
-Create the `.env` file **under the `app` directory** ([see example]()) :
+Create the `.env` file **under the `app` directory** ([see example](https://github.com/chikatetsu/song-rating-android/blob/main/app/.env-example)) :
 ```dotenv
 AUTH_TOKEN=song_rating_token_here
 API_URL=song_rating_api_url_here
-CIDER_TOKEN=cider_token_here
-CIDER_PORT=10767
 ```
-Every variables are optional, but they are most of the time needed to communicate
-properly with your Song Rating API or your Cider application. Here are the default
-value for every variables :
+Every variable are optional, but they are most of the time needed to communicate
+properly with your Song Rating API. Here are the default
+value for every variable :
 ```dotenv
 AUTH_TOKEN="" // If no authentication token is needed to connect to your Song Rating API
 API_URL="localhost:8000" // Value by default, if you run the API with the default port locally
-CIDER_TOKEN="" // If no authentication token is needed to connect to your Cider application
-CIDER_PORT="10767" // The default port used by Cider
 ```
 
 ### 3. Give permissions

@@ -4,6 +4,7 @@ import com.example.songrating.BuildConfig
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONArray
 import org.json.JSONObject
 
 object ApiService {
@@ -33,6 +34,28 @@ object ApiService {
             val message = json.optString("response", "(no message)")
 
             Result.success(message)
+        }
+        catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    fun getRanks(): Result<JSONArray> {
+        return try {
+            val request = Request.Builder()
+                .url("${BuildConfig.API_URL}/rate")
+                .addHeader("Authorization", "Bearer ${BuildConfig.AUTH_TOKEN}")
+                .get()
+                .build()
+
+            val response = ApiClient.client.newCall(request).execute()
+            if (!response.isSuccessful) {
+                return Result.failure(Exception("HTTP ${response.code}: ${response.message}"))
+            }
+
+            val json = JSONObject(response.body.string())
+            val ranks = json.getJSONArray("ranks")
+            Result.success(ranks)
         }
         catch (e: Exception) {
             Result.failure(e)
