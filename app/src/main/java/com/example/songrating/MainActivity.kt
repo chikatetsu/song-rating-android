@@ -102,60 +102,166 @@ class MainActivity : AppCompatActivity() {
         ).show()
     }
 
+    private data class SearchResult(
+        val position: Int,
+        val score: Double
+    )
+
     private fun findBestMatch(query: String): Int {
         val normalizedQuery = normalize(query)
 
-        var bestPosition = -1
-        var bestScore = Double.MAX_VALUE
+        if (normalizedQuery.isEmpty()) {
+            return -1
+        }
+
+        val queryTokens = normalizedQuery
+            .split(" ")
+            .filter { it.isNotEmpty() }
+
+        if (queryTokens.isEmpty()) {
+            return -1
+        }
+
+        var bestResult: SearchResult? = null
 
         for (i in 0 until ranks.length()) {
-
             val song = ranks.getJSONObject(i)
             val name = song.getString("name")
 
             val normalizedName = normalize(name)
 
-            // Correspondance exacte
-            if (normalizedName == normalizedQuery) {
-                return i
-            }
+            val score = calculateSearchScore(
+                normalizedQuery,
+                queryTokens,
+                normalizedName
+            )
 
-            // Si le nom contient directement la recherche, on lui donne une priorité très forte.
-            if (normalizedName.contains(normalizedQuery)) {
-                val score = normalizedName.length - normalizedQuery.length
-                if (score < bestScore) {
-                    bestScore = score.toDouble()
-                    bestPosition = i
-                }
-                continue
-            }
-
-            // Sinon, recherche par similarité
-            val distance = levenshteinDistance(normalizedQuery, normalizedName)
-
-            if (distance < bestScore) {
-                bestScore = distance.toDouble()
-                bestPosition = i
+            if (score > 0.0 && (bestResult == null || score > bestResult.score)
+            ) {
+                bestResult = SearchResult(i, score)
             }
         }
 
-        return bestPosition
+        val minimumScore = 35.0
+
+        return if (bestResult != null && bestResult.score >= minimumScore) {
+            bestResult.position
+        } else {
+            -1
+        }
     }
 
-    private fun normalize(text: String): String {
-        return Normalizer
-            .normalize(text.lowercase(), Normalizer.Form.NFD)
-            .replace("\\p{InCombiningDiacriticalMarks}+".toRegex(), "")
-            .replace("[^a-z0-9 ]".toRegex(), " ")
-            .replace("\\s+".toRegex(), " ")
-            .trim()
+    private fun calculateSearchScore(query: String, queryTokens: List<String>, song: String): Double {
+        val songTokens = song
+            .split(" ")
+            .filter { it.isNotEmpty() }
+
+        var score = 0.0
+
+        if (song == query) {
+            return 1000.0
+        }
+        if (song.contains(query)) {
+            score += 500.0
+        }
+
+        var exactTokenMatches = 0
+
+        for (queryToken in queryTokens) {
+
+            if (songTokens.any { it == queryToken }) {
+                exactTokenMatches++
+                score += 180.0
+            }
+        }
+
+        var prefixMatches = 0
+
+        for (queryToken in queryTokens) {
+            if (queryToken.length < 3) {
+                continue
+            }
+
+            if (songTokens.any { it.startsWith(queryToken) || queryToken.startsWith(it) }) {
+                prefixMatches++
+                score += 90.0
+            }
+        }
+
+        var fuzzyMatches = 0
+
+        for (queryToken in queryTokens) {
+            if (queryToken.length < 3) {
+                continue
+            }
+
+            var bestTokenSimilarity = 0.0
+
+            for (songToken in songTokens) {
+                if (songToken.length < 3) {
+                    continue
+                }
+
+                val similarity = stringSimilarity(
+                    queryToken,
+                    songToken
+                )
+
+                if (similarity > bestTokenSimilarity) {
+                    bestTokenSimilarity = similarity
+                }
+            }
+
+            if (bestTokenSimilarity >= 0.75) {
+                fuzzyMatches++
+                score += 70.0 * bestTokenSimilarity
+            }
+        }
+
+        if (queryTokens.size > 1) {
+            val matchedWords = exactTokenMatches + prefixMatches + fuzzyMatches
+            if (matchedWords >= queryTokens.size) {
+                score += 150.0
+            }
+        }
+
+        if (queryTokens.size == 1) {
+            val token = queryTokens[0]
+
+            if (songTokens.any { it == token }) {
+                score += 250.0
+            }
+        }
+
+        return score
+    }
+
+    private fun stringSimilarity(a: String, b: String): Double {
+        if (a == b) {
+            return 1.0
+        }
+
+        val lengthDifference = kotlin.math.abs(a.length - b.length)
+
+        if (lengthDifference > maxOf(2, a.length / 2)) {
+            return 0.0
+        }
+
+        val distance = levenshteinDistance(a, b)
+        val maxLength = maxOf(a.length, b.length)
+
+        if (maxLength == 0) {
+            return 1.0
+        }
+
+        return 1.0 - distance.toDouble() / maxLength
     }
 
     private fun levenshteinDistance(a: String, b: String): Int {
         if (a.isEmpty()) return b.length
         if (b.isEmpty()) return a.length
 
-        val previousRow = IntArray(b.length + 1) { it }
+        var previousRow = IntArray(b.length + 1) { it }
 
         for (i in a.indices) {
             val currentRow = IntArray(b.length + 1)
@@ -165,14 +271,22 @@ class MainActivity : AppCompatActivity() {
                 val insertCost = currentRow[j] + 1
                 val deleteCost = previousRow[j + 1] + 1
                 val replaceCost = previousRow[j] + if (a[i] == b[j]) 0 else 1
-                currentRow[j + 1] = min(insertCost,min(deleteCost, replaceCost))
+
+                currentRow[j + 1] = minOf(insertCost, deleteCost, replaceCost)
             }
 
-            for (j in currentRow.indices) {
-                previousRow[j] = currentRow[j]
-            }
+            previousRow = currentRow
         }
 
         return previousRow[b.length]
+    }
+
+    private fun normalize(text: String): String {
+        return Normalizer
+            .normalize(text.lowercase(), Normalizer.Form.NFD)
+            .replace("\\p{InCombiningDiacriticalMarks}+".toRegex(), "")
+            .replace("[^\\p{L}\\p{N} ]".toRegex(), " ")
+            .replace("\\s+".toRegex(), " ")
+            .trim()
     }
 }
