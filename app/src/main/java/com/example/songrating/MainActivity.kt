@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.provider.Settings
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ImageButton
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -13,12 +14,12 @@ import com.example.songrating.network.ApiService
 import org.json.JSONArray
 import java.text.Normalizer
 import kotlin.concurrent.thread
-import kotlin.math.min
 
 class MainActivity : AppCompatActivity() {
     private lateinit var ranksRecyclerView: RecyclerView
     private lateinit var notificationSettingsButton: Button
     private lateinit var searchEditText: EditText
+    private lateinit var refreshRanksButton: ImageButton
 
     private var ranks: JSONArray = JSONArray()
 
@@ -29,6 +30,7 @@ class MainActivity : AppCompatActivity() {
 
         notificationSettingsButton = findViewById(R.id.notificationSettingsButton)
         ranksRecyclerView = findViewById(R.id.ranksRecyclerView)
+        refreshRanksButton = findViewById(R.id.refreshRanksButton)
         searchEditText = findViewById(R.id.searchEditText)
         ranksRecyclerView.layoutManager = LinearLayoutManager(this)
 
@@ -36,6 +38,10 @@ class MainActivity : AppCompatActivity() {
             startActivity(
                 Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
             )
+        }
+
+        refreshRanksButton.setOnClickListener {
+            loadRanks()
         }
 
         searchEditText.setOnEditorActionListener { _, _, _ ->

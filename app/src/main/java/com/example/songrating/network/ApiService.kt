@@ -61,4 +61,32 @@ object ApiService {
             Result.failure(e)
         }
     }
+
+    fun getStatusBetweenSongs(song1: String, song2: String): Result<String> {
+        return try {
+            val payload = JSONObject().apply {
+                put("first_song", song1)
+                put("second_song", song2)
+            }
+
+            val body = payload.toString().toRequestBody(JSON)
+            val request = Request.Builder()
+                .url("${BuildConfig.API_URL}/rate")
+                .addHeader("Authorization", "Bearer ${BuildConfig.AUTH_TOKEN}")
+                .post(body)
+                .build()
+
+            val response = ApiClient.client.newCall(request).execute()
+            if (!response.isSuccessful) {
+                return Result.failure(Exception("HTTP ${response.code}: ${response.message}"))
+            }
+
+            val json = JSONObject(response.body.string())
+            val message = json.optString("response", "(no message)")
+            Result.success(message)
+        }
+        catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }
